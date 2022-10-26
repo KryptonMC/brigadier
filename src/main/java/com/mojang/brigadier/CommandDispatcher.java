@@ -157,6 +157,39 @@ public class CommandDispatcher<S> {
      * A forked command will not bubble up any {@link CommandSyntaxException}s, and the 'result' returned will turn into
      * 'amount of successful commands executes'.</p>
      *
+     * <p>After each and any command is run, the given consumer will be notified of the result and success of the command.
+     * You can use it to gather more meaningful results than this method will return, especially when a command forks.</p>
+     *
+     * @param input a command string to parse &amp; execute
+     * @param source a custom "source" object, usually representing the originator of this command
+     * @return a numeric result from a "command" that was performed
+     * @throws CommandSyntaxException if the command failed to parse or execute
+     * @throws RuntimeException if the command failed to execute and was not handled gracefully
+     * @see #parse(String, Object)
+     * @see #parse(StringReader, Object)
+     * @see #execute(ParseResults, ResultConsumer)
+     * @see #execute(StringReader, Object, ResultConsumer)
+     */
+    public int execute(final String input, final S source, final ResultConsumer<S> consumer) throws CommandSyntaxException {
+        return execute(new StringReader(input), source, consumer);
+    }
+
+    /**
+     * Parses and executes a given command.
+     *
+     * <p>This is a shortcut to first {@link #parse(StringReader, Object)} and then {@link #execute(ParseResults)}.</p>
+     *
+     * <p>It is recommended to parse and execute as separate steps, as parsing is often the most expensive step, and easiest to cache.</p>
+     *
+     * <p>If this command returns a value, then it successfully executed something. If it could not parse the command, or the execution was a failure,
+     * then an exception will be thrown. Most exceptions will be of type {@link CommandSyntaxException}, but it is possible that a {@link RuntimeException}
+     * may bubble up from the result of a command. The meaning behind the returned result is arbitrary, and will depend
+     * entirely on what command was performed.</p>
+     *
+     * <p>If the command passes through a node that is {@link CommandNode#isFork()} then it will be 'forked'.
+     * A forked command will not bubble up any {@link CommandSyntaxException}s, and the 'result' returned will turn into
+     * 'amount of successful commands executes'.</p>
+     *
      * <p>After each and any command is ran, a registered callback given to {@link #setConsumer(ResultConsumer)}
      * will be notified of the result and success of the command. You can use that method to gather more meaningful
      * results than this method will return, especially when a command forks.</p>
@@ -174,6 +207,40 @@ public class CommandDispatcher<S> {
     public int execute(final StringReader input, final S source) throws CommandSyntaxException {
         final ParseResults<S> parse = parse(input, source);
         return execute(parse);
+    }
+
+    /**
+     * Parses and executes a given command.
+     *
+     * <p>This is a shortcut to first {@link #parse(StringReader, Object)} and then {@link #execute(ParseResults)}.</p>
+     *
+     * <p>It is recommended to parse and execute as separate steps, as parsing is often the most expensive step, and easiest to cache.</p>
+     *
+     * <p>If this command returns a value, then it successfully executed something. If it could not parse the command, or the execution was a failure,
+     * then an exception will be thrown. Most exceptions will be of type {@link CommandSyntaxException}, but it is possible that a {@link RuntimeException}
+     * may bubble up from the result of a command. The meaning behind the returned result is arbitrary, and will depend
+     * entirely on what command was performed.</p>
+     *
+     * <p>If the command passes through a node that is {@link CommandNode#isFork()} then it will be 'forked'.
+     * A forked command will not bubble up any {@link CommandSyntaxException}s, and the 'result' returned will turn into
+     * 'amount of successful commands executes'.</p>
+     *
+     * <p>After each and any command is run, the given consumer will be notified of the result and success of the command.
+     * You can use it to gather more meaningful results than this method will return, especially when a command forks.</p>
+     *
+     * @param input a command string to parse &amp; execute
+     * @param source a custom "source" object, usually representing the originator of this command
+     * @return a numeric result from a "command" that was performed
+     * @throws CommandSyntaxException if the command failed to parse or execute
+     * @throws RuntimeException if the command failed to execute and was not handled gracefully
+     * @see #parse(String, Object)
+     * @see #parse(StringReader, Object)
+     * @see #execute(ParseResults, ResultConsumer)
+     * @see #execute(String, Object, ResultConsumer)
+     */
+    public int execute(final StringReader input, final S source, final ResultConsumer<S> consumer) throws CommandSyntaxException {
+        final ParseResults<S> parse = parse(input, source);
+        return execute(parse, consumer);
     }
 
     /**
@@ -203,6 +270,40 @@ public class CommandDispatcher<S> {
      * @see #execute(StringReader, Object)
      */
     public int execute(final ParseResults<S> parse) throws CommandSyntaxException {
+        return execute0(parse, consumer);
+    }
+
+    /**
+     * Executes a given pre-parsed command.
+     *
+     * <p>If this command returns a value, then it successfully executed something. If the execution was a failure,
+     * then an exception will be thrown.
+     * Most exceptions will be of type {@link CommandSyntaxException}, but it is possible that a {@link RuntimeException}
+     * may bubble up from the result of a command. The meaning behind the returned result is arbitrary, and will depend
+     * entirely on what command was performed.</p>
+     *
+     * <p>If the command passes through a node that is {@link CommandNode#isFork()} then it will be 'forked'.
+     * A forked command will not bubble up any {@link CommandSyntaxException}s, and the 'result' returned will turn into
+     * 'amount of successful commands executes'.</p>
+     *
+     * <p>After each and any command is run, the given consumer will be notified of the result and success of the command.
+     * You can use it to gather more meaningful results than this method will return, especially when a command forks.</p>
+     *
+     * @param parse the result of a successful {@link #parse(StringReader, Object)}
+     * @param consumer the consumer to execute after each command is run
+     * @return a numeric result from a "command" that was performed.
+     * @throws CommandSyntaxException if the command failed to parse or execute
+     * @throws RuntimeException if the command failed to execute and was not handled gracefully
+     * @see #parse(String, Object)
+     * @see #parse(StringReader, Object)
+     * @see #execute(String, Object, ResultConsumer)
+     * @see #execute(StringReader, Object, ResultConsumer)
+     */
+    public int execute(final ParseResults<S> parse, final ResultConsumer<S> consumer) throws CommandSyntaxException {
+        return execute0(parse, consumer);
+    }
+
+    private int execute0(final ParseResults<S> parse, final ResultConsumer<S> consumer) throws CommandSyntaxException {
         if (parse.getReader().canRead()) {
             if (parse.getExceptions().size() == 1) {
                 throw parse.getExceptions().values().iterator().next();
