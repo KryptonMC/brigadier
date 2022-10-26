@@ -1,7 +1,7 @@
 apply plugin: 'java-library'
 apply plugin: 'maven-publish'
 
-group = 'com.velocitypowered'
+group = 'org.kryptonmc'
 version = project.hasProperty('buildNumber') ? "${project.majorMinor}.${project.buildNumber}" : "${project.majorMinor}.0-SNAPSHOT"
 
 buildscript {
@@ -90,10 +90,10 @@ publishing {
                 password System.getenv("NEXUS_PASSWORD")
             }
 
-            name = 'velocity-nexus'
-            def base = 'https://nexus.velocitypowered.com/repository/velocity-artifacts'
-            def releasesRepoUrl = "$base-release/"
-            def snapshotsRepoUrl = "$base-snapshots/"
+            name = 'krypton'
+            def base = 'https://repo.kryptonmc.org'
+            def releasesRepoUrl = "$base/releases"
+            def snapshotsRepoUrl = "$base/snapshots"
             url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
         }
     }
